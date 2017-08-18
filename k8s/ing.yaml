@@ -1,0 +1,20 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: spring-data-rest
+  labels:
+    app: spring-data-rest
+    stable.k8s.psg.io/kcm.class: default
+spec:
+  rules:
+  - host: spring-data-rest.kops.k8s.live
+    http:
+      paths:
+      - backend:
+          serviceName: spring-data-rest
+          servicePort: 8000
+        path: /
+  tls:
+  - hosts:
+    - spring-data-rest.kops.k8s.live
+    secretName: spring-data-rest.kops.k8s.live

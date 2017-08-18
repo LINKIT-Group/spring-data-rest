@@ -1,0 +1,42 @@
+version: 2
+jobs:
+  build:
+    context: org-global
+    working_directory: ~/circleci-spring-data-rest
+
+    docker:
+      - image: circleci/openjdk:8-jdk-browsers
+    
+    environment: 
+      VERSION: 0.1
+      KUBE_PATH: ~/.kube
+      KUBECONFIG: ~/.kube/config 
+
+    steps:
+      - setup_remote_docker
+
+      - checkout
+
+      - restore_cache:
+          key: circleci-spring-data-rest-{{ checksum "pom.xml" }}
+      
+      - run: mvn dependency:go-offline
+      
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: circleci-spring-data-rest-{{ checksum "pom.xml" }}
+      
+      - run: mvn test package -Ddockerfile.tag=${CIRCLE_BUILD_NUM} 
+      
+      - store_test_results:
+          path: target/surefire-reports
+
+      # push Docker image
+      - run: |
+          echo $CIRCLE_BUILD_NUM
+          docker login -u $DOCKER_USER -p $DOCKER_PASS
+          mvn dockerfile:push -Ddockerfile.tag=${CIRCLE_BUILD_NUM}
+          curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl && chmod +x kubectl && mkdir -p $KUBE_PATH && openssl enc -d -aes-256-cbc -in k8s/kubeconfig.enc -k $KEY -out ${KUBECONFIG}
+          ./kubectl set image -n development deployment/spring-data-rest spring-data-rest=linkitgroup/spring-data-rest:${CIRCLE_BUILD_NUM}
+          ./kubectl rollout status -n development deployment/spring-data-rest

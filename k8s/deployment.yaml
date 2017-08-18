@@ -1,0 +1,16 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: spring-data-rest
+  labels:
+    app: spring-data-rest
+spec:
+  template:
+    metadata:
+      labels:
+        app: spring-data-rest
+    spec:
+      containers:
+        - name: spring-data-rest
+          image: linkitgroup/spring-data-rest:0.1.48
+          imagePullPolicy: IfNotPresent
